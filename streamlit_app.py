@@ -144,7 +144,7 @@ def descargar_datos(fecha_inicio: str, fecha_fin: str):
 
     # ── CAPA 1: CSV LOCAL ──────────────────────────────────────────
     rutas_csv = [
-        "datos/datos_bogota.csv",   # Streamlit Cloud (carpeta datos/)
+        "data/datos_bogota.csv",   # Streamlit Cloud (carpeta datos/)
         "datos_bogota.csv",         # Raíz del proyecto (alternativa)
     ]
 
