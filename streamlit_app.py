@@ -395,7 +395,7 @@ st.markdown("""
 # 6. EJECUCIÓN PRINCIPAL
 # ─────────────────────────────────────────────
 
-if ejecutar or True:  # Se ejecuta automáticamente al cargar
+if ejecutar:  # Se ejecuta automáticamente al cargar
     
     # ── 6.1 Descargar datos ──
     with st.spinner("📡 Descargando datos desde Yahoo Finance y BanRep..."):
@@ -542,9 +542,10 @@ if ejecutar or True:  # Se ejecuta automáticamente al cargar
         tabla_coefs = pd.DataFrame({
             "Variable": ["Constante (β₀)", "Tasa BanRep (β₁)", "COLCAP (β₂)"],
             "Coeficiente": [f"{coefs['const']:,.2f}", f"{coefs['tasa_banrep']:,.2f}", f"{coefs['colcap']:.4f}"],
-            "Std Error": [f"{modelo.bse['const']:,.2f}", f"{modelo.bse['tasa_banrep']:,.2f}", f"{modelo.bse['colcap']:.4f}"],
+            "Std Error": [f"{modelo.bse['const']:,.2f}", f"{modelo.bse['tasa_banrep']:,.2f}", f"{modelo.bse['colcap']:.4f}"],            
             "t-estadístico": [f"{modelo.tvalues['const']:.3f}", f"{modelo.tvalues['tasa_banrep']:.3f}", f"{modelo.tvalues['colcap']:.3f}"],
             f"p-valor": [f"{pvals['const']:.4f}", f"{pvals['tasa_banrep']:.4f}", f"{pvals['colcap']:.4f}"],
+
             "Significativo": [
                 "✅ Sí" if pvals['const'] < α else "❌ No",
                 "✅ Sí" if pvals['tasa_banrep'] < α else "❌ No",
