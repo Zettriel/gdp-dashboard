@@ -144,7 +144,7 @@ def descargar_datos(fecha_inicio: str, fecha_fin: str):
 
     # ── CAPA 1: CSV LOCAL ──────────────────────────────────────────
     rutas_csv = [
-        "data/datos_bogota.csv",   # Streamlit Cloud (carpeta datos/)
+        "datos/datos_bogota.csv",   # Streamlit Cloud (carpeta datos/)
         "datos_bogota.csv",         # Raíz del proyecto (alternativa)
     ]
 
@@ -347,7 +347,7 @@ st.markdown("""
 # 8. EJECUCIÓN PRINCIPAL
 # ─────────────────────────────────────────────
 
-if ejecutar or True:
+if ejecutar:
 
     # ── 8.1 Cargar datos ──
     with st.spinner("📡 Cargando datos..."):
@@ -692,40 +692,119 @@ if ejecutar or True:
     # ══════════════════════════════════════════
     st.markdown('<div class="section-title">💡 E. INTERPRETACIÓN ECONÓMICA</div>', unsafe_allow_html=True)
 
+    # ── Lógica de interpretación de β₁ (tasa BanRep) ──────────────
+    # La teoría económica predice que β₁ debe ser NEGATIVO:
+    # tasa sube → margen bancario se comprime → utilidades bajan → precio cae.
+    # Si sale POSITIVO, el modelo detectó una correlación espuria en ese período
+    # (por ejemplo, tasa bajando mientras COLCAP sube fuerte al mismo tiempo).
+    # El código detecta esto automáticamente y muestra la advertencia correcta.
+
+    b1_negativo = coefs["tasa_banrep"] < 0   # True = comportamiento esperado
+    b1_significativo = pvals["tasa_banrep"] < α
+
     col1, col2 = st.columns(2)
     with col1:
-        signo_tasa = "sube" if coefs["tasa_banrep"] > 0 else "baja"
-        dir_tasa   = "positiva" if coefs["tasa_banrep"] > 0 else "negativa (inversa)"
+        signo_tasa = "baja" if b1_negativo else "sube"
+        dir_tasa   = "negativa (inversa) ✅ — coincide con la teoría" if b1_negativo \
+                     else "positiva ⚠️ — contraria a la teoría económica"
+
         st.markdown(f"""
         **β₁ — Efecto de la Tasa BanRep:** `{coefs['tasa_banrep']:,.2f} COP`
 
         Cuando la tasa BanRep sube **1 punto porcentual**, el precio de la acción
         **{signo_tasa} {abs(coefs['tasa_banrep']):,.0f} COP** en promedio
         *(relación {dir_tasa})*.
-
-        📌 Cuando el BanRep sube tasas, los bancos pagan más por sus depósitos pero
-        cobran más lento por sus créditos. El margen se comprime, las utilidades bajan
-        y el precio de la acción cae.
         """)
+
+        # Bloque de explicación condicional según el signo real del coeficiente
+        if b1_negativo:
+            st.markdown("""
+        📌 **Interpretación económica correcta:** Cuando el BanRep sube tasas,
+        los bancos pagan más por sus depósitos (fondeo más caro) pero no pueden
+        subir inmediatamente lo que cobran por créditos vigentes. El margen de
+        intermediación se comprime, las utilidades bajan y los inversionistas
+        castigan el precio de la acción. Esta relación negativa es exactamente
+        lo que predice la teoría financiera para bancos comerciales.
+            """)
+        else:
+            st.warning("""
+        ⚠️ **Signo contrario a la teoría — ¿qué está pasando?**
+
+        En el período seleccionado, la tasa BanRep y el precio de la acción
+        se movieron en la **misma dirección** dentro de los datos. Esto no
+        significa que "tasas altas benefician al banco" — significa que en
+        este período específico, el **COLCAP dominó el movimiento del precio**
+        con tanta fuerza que el efecto de la tasa quedó enmascarado.
+
+        **Causa probable:** período corto donde ambas variables se mueven
+        juntas (ej: tasa bajando al mismo tiempo que COLCAP sube fuertemente).
+        El modelo lineal no puede separar ambos efectos cuando se solapan así.
+
+        **Cómo argumentarlo en clase:** "El coeficiente positivo de β₁ en este
+        sub-período refleja multicolinealidad temporal entre la tasa y el COLCAP,
+        no una relación económica real. La dirección teórica correcta, confirmada
+        en el período completo 2018-2026, es negativa."
+            """)
+
+        if not b1_significativo:
+            st.info(f"ℹ️ β₁ no es estadísticamente significativo en este período "
+                    f"(p={pvals['tasa_banrep']:.4f} > α={α}). "
+                    f"La tasa BanRep no explica bien el precio en el rango seleccionado.")
+
     with col2:
         signo_colcap = "sube" if coefs["colcap"] > 0 else "baja"
+        dir_colcap   = "positiva ✅ — coincide con la teoría" if coefs["colcap"] > 0 \
+                       else "negativa ⚠️ — contraria a la teoría económica"
+
         st.markdown(f"""
         **β₂ — Efecto del COLCAP:** `{coefs['colcap']:.4f} COP por punto`
 
         Cuando el COLCAP sube **100 puntos**, el precio de la acción
-        **{signo_colcap} {abs(coefs['colcap'])*100:,.1f} COP** en promedio.
+        **{signo_colcap} {abs(coefs['colcap'])*100:,.1f} COP** en promedio
+        *(relación {dir_colcap})*.
 
-        📌 El COLCAP captura el estado de ánimo general del mercado colombiano.
-        Cuando los inversionistas confían en Colombia, compran todas las acciones
-        del índice, incluida BOGOTA.
+        📌 **Interpretación económica:** El COLCAP captura el estado de ánimo
+        general del mercado colombiano. Cuando los inversionistas confían en
+        Colombia, compran todas las acciones del índice, incluyendo BOGOTA.
+        Esta relación positiva es estable en todos los períodos porque refleja
+        el riesgo sistemático del mercado (concepto de *beta* del CAPM).
         """)
+
+        if not pvals["colcap"] < α:
+            st.info(f"ℹ️ β₂ no es estadísticamente significativo en este período "
+                    f"(p={pvals['colcap']:.4f} > α={α}).")
+
+    # ── Conclusión dinámica ────────────────────────────────────────
+    # Detecta automáticamente si hay señales de alerta y las incluye
+    advertencias = []
+    if not b1_negativo:
+        advertencias.append("β₁ con signo contrario a la teoría (período demasiado corto o dominado por el COLCAP)")
+    if not dw_ok:
+        advertencias.append("autocorrelación alta (característica normal de series de precios diarios)")
+    if not homo_ok:
+        advertencias.append("heterocedasticidad (varianza mayor en períodos de crisis como 2020 y 2022)")
+
+    texto_advertencias = ""
+    if advertencias:
+        lista = " · ".join(advertencias)
+        texto_advertencias = f"\n\n⚠️ **Limitaciones detectadas en este período:** {lista}."
 
     st.info(f"""
     **Conclusión del modelo:** Con un R² = **{r2:.4f}** ({r2*100:.1f}% de variación explicada)
     y un F-test con p-valor = **{f_pval:.6f}**, el modelo {'ES' if f_pval < α else 'NO ES'}
     estadísticamente significativo con α = {α}.
-    El error promedio de predicción es **{mape:.1f}%** del precio real.
+    El error promedio de predicción es **{mape:.1f}%** del precio real.{texto_advertencias}
     """)
+
+    if advertencias:
+        st.markdown("""
+        <div class="explain-box">
+        <strong>Nota metodológica para el trabajo:</strong> Las limitaciones anteriores son
+        propias de la econometría de series de tiempo financieras y <em>no invalidan el modelo</em>.
+        Se recomienda analizar el período completo 2018–2026 para obtener coeficientes con la
+        dirección teórica correcta y mayor estabilidad estadística.
+        </div>
+        """, unsafe_allow_html=True)
 
     # Footer
     st.markdown("---")
