@@ -1,20 +1,6 @@
 """
-╔══════════════════════════════════════════════════════════════════╗
-║    ANÁLISIS DE REGRESIÓN LINEAL MÚLTIPLE                        ║
-║    Banco de Bogotá S.A. — BVC: BOGOTA                          ║
-║    Variables: Tasa BanRep + COLCAP → Precio Acción             ║
-╚══════════════════════════════════════════════════════════════════╝
-
-Autor: Trabajo de clase — Finanzas / Econometría
-Fuentes de datos: CSV local (datos reales 2018-2026) + Banco de la República
-
-CÓMO EJECUTAR:
-    streamlit run streamlit_app.py
-
-LIBRERÍAS NECESARIAS (instalar una sola vez):
     pip install streamlit yfinance pandas numpy statsmodels plotly scikit-learn scipy
 """
-
 # ─────────────────────────────────────────────
 # 0. IMPORTACIONES
 # ─────────────────────────────────────────────
@@ -83,7 +69,6 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
-
 
 # ─────────────────────────────────────────────
 # 3. DICCIONARIO DE TASAS BANREP (completo 2018-2026)
