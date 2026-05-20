@@ -347,7 +347,7 @@ st.markdown("""
 # 8. EJECUCIÓN PRINCIPAL
 # ─────────────────────────────────────────────
 
-if ejecutar:
+if ejecutar or TRUE:
 
     # ── 8.1 Cargar datos ──
     with st.spinner("📡 Cargando datos..."):
