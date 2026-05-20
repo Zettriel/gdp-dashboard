@@ -582,7 +582,7 @@ if ejecutar:
     for i, (nombre, ok) in enumerate(checks.items()):
         with cols[i % 3]:
             icono  = "✅" if ok else "❌"
-            color  = "#e6f4ea" if ok else "#fce8e6"
+            color  = "#050505" if ok else "#040404"
             border = "#34a853" if ok else "#ea4335"
             st.markdown(f"""
             <div style="background:{color}; border-left:4px solid {border};
